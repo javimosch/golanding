@@ -4,7 +4,7 @@ const express = require('express');
 const router = express.Router();
 const Todo = require('../models/Todo');
 const errorHandler = require('../utils/errorHandler');
-const validate = require('../middlewares/validate');
+const validate = global.validateSchema
 
 // Get all todos
 router.get('/', errorHandler(async (req, res) => {
@@ -41,7 +41,10 @@ router.delete('/:id', errorHandler(async (req, res) => {
   if (!todo) {
     return res.status(404).json({ message: 'Todo not found' });
   }
+  await global.logEvent('TODO_DELETE_SUCCESS', { todo });
   res.json({ message: 'Todo deleted' });
 }));
 
-module.exports = router;
+module.exports = app=>{
+  app.use('/api/todos', router);
+};

@@ -1,16 +1,21 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import * as ackeeTracker from 'ackee-tracker'
 
-const ackeeServer = "/ackee"; // Vitejs proxy route
+const ackeeServer = process.env.ACKEE_SERVER//"/ackee"; // Vitejs proxy route
 const ackeeDomainId = process.env.ACKEE_DOMAIN_ID; 
 
 const useAckee = (server = ackeeServer, domainId = ackeeDomainId, options = {}) => {
   const [ackeeInstance, setAckeeInstance] = useState(null);
   const stopRecordingRef = useRef(null);
 
+  
+
   useEffect(() => {
-    if (!ackeeInstance) {
-      console.log("START")
+    if(!(ackeeServer&&ackeeDomainId)){
+      console.log('Ackee disabled')
+    }
+    if (!ackeeInstance && ackeeServer&&ackeeDomainId) {
+      console.log('useAckee', ackeeServer,ackeeDomainId)
       const instance = ackeeTracker.create(server, {
         detailed: true,
         ignoreLocalhost: false,
@@ -34,7 +39,7 @@ const useAckee = (server = ackeeServer, domainId = ackeeDomainId, options = {}) 
     if (ackeeInstance) {
       ackeeInstance.action(eventId, attributes);
     } else {
-      console.warn('Ackee instance not initialized');
+      //console.warn('Ackee instance not initialized');
     }
   }, [ackeeInstance]);
 

@@ -10,7 +10,7 @@ import useAckee from "./hooks/useAckee";
 
 const App = () => {
   
-  const {trackEvent} = useAckee(ackeeServer, ackeeDomainId)
+  const {trackEvent} = useAckee()
 
   const { todos, error, addTodo, updateTodo, deleteTodo } = useTodoCrud();
   const {

@@ -1,0 +1,31 @@
+<!-- Add this after the reverse proxies table -->
+<div class="bg-white p-6 rounded shadow-md mt-8">
+    <h2 class="text-2xl font-bold mb-4">Recent Events</h2>
+    <div class="flex items-center mb-4">
+      <button
+        id="updateEvents"
+        class="bg-blue-500 text-white px-4 py-2 rounded mr-4"
+      >
+        Update Events
+      </button>
+      <label class="flex items-center">
+        <input type="checkbox" id="autoUpdate" class="mr-2" />
+        Auto-update every 5 seconds
+      </label>
+    </div>
+    <div class="overflow-x-auto">
+      <table id="eventsTable" class="w-full table-auto">
+        <thead>
+          <tr>
+            <th class="text-left px-4 py-2">Action</th>
+            <th class="text-left px-4 py-2">Details</th>
+            <th class="text-left px-4 py-2">Timestamp</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Events will be populated here -->
+        </tbody>
+      </table>
+    </div>
+    <script src="/js/events.js"></script>
+  </div>
