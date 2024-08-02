@@ -4,3 +4,4 @@ logs
 logs/*.log
 .env
 node_modules
+deploy.json

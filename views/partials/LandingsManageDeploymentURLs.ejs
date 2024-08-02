@@ -13,8 +13,8 @@
             <p id="stagingUrlText" class="mt-1 text-sm text-gray-500">https://example-staging.com</p>
           </a>
         </li>
-        <% if (env.LP_ALLOW_DEPLOYMENT_SECTION == '0' && env.LP_DEPLOYMENT_DOMAIN_AFFIX) { %>
-        <li>
+        
+        <li id="prodUrlLi">
           <a id="prodUrlLink" href="https://example-production.com" target="_blank" class="block p-4 hover:bg-gray-50 transition duration-150 ease-in-out">
             <div class="flex items-center">
               <svg class="h-6 w-6 text-green-500 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -25,7 +25,7 @@
             <p id="prodUrlText" class="mt-1 text-sm text-gray-500">https://example-production.com</p>
           </a>
         </li>
-        <% } %>
+        
       </ul>
     </div>
   </section>

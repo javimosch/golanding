@@ -53,7 +53,6 @@
 
   function handleSelectChange(event) {
     if (!event.target.value) {
-      openLandingLink.style.display = "none";
       Preview.style.display="none"
       deleteButton.style.display="none"
       updateButton.style.display="none"
@@ -85,12 +84,20 @@
 
         stagingUrlLink.href=`${location.origin}/page/${data.name}`
         stagingUrlText.innerHTML=`${location.origin}/page/${data.name}`
+        
+        prodUrlLi.style.display="inline-block"
+        <% if (env.LP_ALLOW_DEPLOYMENT_SECTION == '0' && env.LP_DEPLOYMENT_DOMAIN_AFFIX) { %>
         prodUrlLink.href=`http://${data.name}<%- env.LP_DEPLOYMENT_DOMAIN_AFFIX%>`
         prodUrlText.innerHTML=`http://${data.name}<%- env.LP_DEPLOYMENT_DOMAIN_AFFIX%>`
+        <% } else{%>
+          if(data?.metadata?.deployment?.domains.length>0){
+            prodUrlLink.href=`http://${data?.metadata?.deployment?.domains[0]}`
+            prodUrlText.innerHTML=`http://${data?.metadata?.deployment?.domains[0]}`
+          }else{
+            prodUrlLi.style.display="none"
+          }
+        <% } %>
 
-        // Show and update the "Open Page" link
-        openLandingLink.style.display = "inline-block";
-        openLandingLink.href = `/page/${data.name}`;
         Preview.style.display="inline-block"
         updateButton.style.display="inline-block"
         deleteButton.style.display="inline-block"

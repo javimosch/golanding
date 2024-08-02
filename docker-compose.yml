@@ -14,5 +14,5 @@ services:
       - ./views:/usr/src/app/views
       - ./src:/usr/src/app/src
     ports:
-      - '3069:3000'
+      - '${HOST_PORT:-3069}:3000'
   

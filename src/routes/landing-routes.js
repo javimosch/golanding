@@ -129,12 +129,16 @@ router.post(
       name: req.body.name,
     };
 
-    // Remove any existing preview with the same name
-    Object.keys(global.previewLandingPages).forEach((key) => {
+    // Reuse any existing preview with the same name
+    for(let key of Object.keys(global.previewLandingPages)){
       if (global.previewLandingPages[key].name === payload.name) {
-        delete global.previewLandingPages[key];
+        //delete global.previewLandingPages[key];
+        global.previewLandingPages[key] = payload;
+        await global.logEvent("LANDING_PAGE_PREVIEW_CREATE", { payload });
+        return res.status(201).json({ previewId:key, ...payload });
       }
-    });
+    }
+    
 
     // Generate a unique preview ID
     const previewId =

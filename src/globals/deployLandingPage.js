@@ -9,7 +9,7 @@ async function deployLandingPage(landingPage) {
     }
 
     let whiteListPartial =
-      (process.env.PROXYFLARE_DOMAINS_WHITELIST_PARTIAL.split(',') || []).filter(d=>!!d);
+      ((process.env.PROXYFLARE_DOMAINS_WHITELIST_PARTIAL||"").split(',') || []).filter(d=>!!d);
     if (whiteListPartial.length > 0) {
 
       let blacklistedDomains = domains.filter((d) => !whiteListPartial.some(p=>d.includes(p)));
