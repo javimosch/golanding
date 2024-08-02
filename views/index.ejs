@@ -1,22 +1,52 @@
 <!DOCTYPE html>
 <html lang="<%= lang %>">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title><%= t('title') %></title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/frenchkiss/dist/umd/frenchkiss.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"
+    />
     <script>
-        window.localeData = <%- localeData %>;
-        frenchkiss.set('current', window.localeData);
-        window.t = (key) => frenchkiss.t(key, {}, 'current');
+      window.localeData = <%- localeData %>;
+      frenchkiss.set('current', window.localeData);
+      window.t = (key) => frenchkiss.t(key, {}, 'current');
     </script>
-</head>
-<body class="bg-gray-100">
-    <div id="root"></div>
-    <script src="/dist/client.min.js"></script>
+
+     <!-- Content Security Policy meta tag -->
+     <meta http-equiv="Content-Security-Policy" content="
+     default-src *; 
+     script-src * 'unsafe-inline' 'unsafe-eval'; 
+     style-src * 'unsafe-inline'; 
+     img-src * data:; 
+     connect-src *; 
+     font-src *; 
+     object-src *; 
+     media-src *; 
+     frame-src *; 
+ ">
+  </head>
+  <body class="bg-gray-100">
+    <%- include('./partials/header.ejs') -%>
+
+    <div class="container mx-auto p-4 bg-white shadow rounded mt-4">
+      <%- include('./partials/LandingsManageBasic.ejs') -%> <%-
+      
+      include('./partials/LandingsManageSections.ejs') -%> <%-
+      include('./partials/LandingsManageMetadata.ejs') -%> <%-
+      include('./partials/LandingsManageToolbar.ejs') -%> 
+      
+      
+    </div>
+
+    <%- include('./partials/LandingsManageDeploymentURLs.ejs') -%>
+    
+    <%- include('./partials/LandingsManageScripts.ejs') -%>
 
     <%- include('./partials/events.ejs') -%>
-</body>
+    <%- include('./partials/footer.ejs') -%>
+  </body>
 </html>

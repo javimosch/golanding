@@ -2,13 +2,26 @@
  * Synchronously loads all .js files in the specified directory in alphanumeric order.
  *
  */
-function loadRoutesSync(app,relativePath = 'routes') {
+function loadRoutesSync(app,relativePath = 'routes',options = {}) {
+
+    let blacklistPartial = (options.blacklistPartial||[]).filter(str=>!!str)
+
     const fs = require('fs');
     const path = require('path');
     const routesDir = path.join(process.cwd(), 'src', relativePath);
 
     // Get all .js files in the directory
-    const files = fs.readdirSync(routesDir).filter(file => file.endsWith('.js'));
+    let files = fs.readdirSync(routesDir).filter(file => file.endsWith('.js'))
+
+    let excluded = files.filter(str=>{
+        return blacklistPartial.some(s => str.includes(s))
+    })
+
+    console.log(`(${relativePath}) excluded: ${excluded.join(',')}`)
+
+    files = files.filter(str=>{
+        return !blacklistPartial.some(s => str.includes(s))
+    })
 
     // Sort the files alphanumerically
     files.sort((a, b) => {

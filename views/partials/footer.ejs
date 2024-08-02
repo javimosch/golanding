@@ -1,0 +1,35 @@
+
+<section class="bg-gray-50 py-16">
+    <div class="container mx-auto px-4">
+        <h2 class="text-3xl font-bold mb-8 text-center">How Landing Proxiflare Works</h2>
+        <div class="max-w-4xl mx-auto">
+            <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
+                <h3 class="text-xl font-semibold mb-4">Dynamic Routing and API Integration</h3>
+                <p class="mb-4">Landing Proxiflare leverages ExpressJS to create dynamic routes for each generated landing page. When a page is created, it automatically sends an API call to Proxyflare to configure DNS and proxy settings, pointing to the specific subpath in Landing Proxiflare (e.g., /page/my-landing).</p>
+            </div>
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <h3 class="text-xl font-semibold mb-4">Self-Hosting Configuration</h3>
+                <p class="mb-4">To self-host Landing Proxiflare, you'll need to configure the following environment variables:</p>
+                <ul class="list-disc list-inside space-y-2 mb-4">
+                    <li><code class="bg-gray-100 px-2 py-1 rounded">MONGODB_URI</code>: Your MongoDB connection string</li>
+                    <li><code class="bg-gray-100 px-2 py-1 rounded">DBNAME</code>: Set to "landing_proxyflare"</li>
+                    <li><code class="bg-gray-100 px-2 py-1 rounded">PROXYFLARE_URL</code>: The public URL of your Proxyflare instance</li>
+                    <li><code class="bg-gray-100 px-2 py-1 rounded">PROXYFLARE_APIKEY</code>: Your Proxyflare API key</li>
+                    <li><code class="bg-gray-100 px-2 py-1 rounded">PROXYFLARE_PROXY_HOST_DEFAULT</code>: Your server's static IP address</li>
+                    <li><code class="bg-gray-100 px-2 py-1 rounded">PROXYFLARE_PROXY_PORT_DEFAULT</code>: The exposed Docker port for the Landing proxyflare instance</li>
+                    <li><code class="bg-gray-100 px-2 py-1 rounded">AUTH_USER</code>: Admin username (default: admin)</li>
+                    <li><code class="bg-gray-100 px-2 py-1 rounded">AUTH_PASSWORD</code>: Admin password (default: admin)</li>
+                </ul>
+                <p>Ensure these variables are properly set to enable seamless integration between Landing Proxiflare and Proxyflare.</p>
+            </div>
+        </div>
+    </div>
+</section>
+<main class="container mx-auto px-4 py-12">
+    <div class="max-w-3xl mx-auto">
+       
+        <div class="text-center">
+            <a href="https://github.com/javimosch/proxyflare" target="_blank" class="inline-block bg-blue-600 text-white font-semibold py-3 px-8 rounded-full hover:bg-blue-700 transition duration-300">Learn More</a>
+        </div>
+    </div>
+</main>

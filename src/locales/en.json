@@ -1,16 +1,3 @@
 {
-  "title": "TODO App",
-  "addTodo": "Add Todo",
-  "editTodo": "Edit Todo",
-  "deleteTodo": "Delete",
-  "updateTodo": "Update Todo",
-  "newTodoPlaceholder": "New todo",
-  "editTodoPlaceholder": "Edit todo",
-  "confirmAction": "Confirm Action",
-  "confirm": "Confirm",
-  "cancel": "Cancel",
-  "confirmDeleteTodo": "Are you sure you want to delete the todo: '{todo}'?",
-  "todoAdded": "Todo added successfully",
-  "todoUpdated": "Todo updated successfully",
-  "todoDeleted": "Todo deleted successfully"
+  "title": "LP - Landing Proxy"
 }

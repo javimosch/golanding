@@ -1,0 +1,32 @@
+<!-- views/partials/LandingsManageSections.ejs -->
+<div class="mb-4">
+  <button 
+    id="sectionsToggle" 
+    class="flex justify-between items-center w-full text-lg font-medium text-gray-700 mb-2 bg-gray-100 p-2 rounded"
+    onclick="toggleSections()"
+  >
+    <span>Sections</span>
+    <svg id="sectionsArrow" class="w-5 h-5 transform transition-transform duration-200" fill="currentColor" viewBox="0 0 20 20">
+      <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/>
+    </svg>
+  </button>
+  <div id="sectionsContent" class="hidden">
+    <div id="sectionsContainer"></div>
+    <button
+      id="addSectionButton"
+      class="bg-green-500 text-white p-2 rounded mt-2"
+      onclick="addSection()"
+    >
+      Add Section
+    </button>
+  </div>
+</div>
+
+<script>
+  function toggleSections() {
+    const content = document.getElementById('sectionsContent');
+    const arrow = document.getElementById('sectionsArrow');
+    content.classList.toggle('hidden');
+    arrow.classList.toggle('rotate-180');
+  }
+</script>

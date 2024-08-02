@@ -1,5 +1,14 @@
 let autoUpdateInterval;
 
+function escapeHtml(unsafe) {
+    return unsafe
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+}
+
 function fetchEvents() {
     fetch('/api/events')
         .then(response => response.json())
@@ -10,7 +19,7 @@ function fetchEvents() {
                 const row = `
                     <tr>
                         <td>${event.action}</td>
-                        <td>${JSON.stringify(event.details)}</td>
+                        <td>${escapeHtml(JSON.stringify(event.details))}</td>
                         <td>${new Date(event.timestamp).toLocaleString()}</td>
                     </tr>
                 `;

@@ -1,11 +1,8 @@
-# Required
-MONGODB_URI=mongodb://root:gtf@195.154.119.28:27017
-
-# Optional
-LOG_ROTATOR_CRON_STRING=* * * * *
-DEBUG_SCOPES=*
-DEBUG_LEVEL=4
-NODE_ENV=production
-ACKEE_SERVER=
-ACKEE_DOMAIN_ID=
-FRONT_END_ENVS=ACKEE_SERVER,ACKEE_DOMAIN_ID
+MONGODB_URI=
+DBNAME=landing_proxyflare
+PROXYFLARE_URL=proxyflare_public_url
+PROXYFLARE_APIKEY=your_proxyflare_api_key
+PROXYFLARE_PROXY_HOST_DEFAULT=your_server_static_ip
+PROXYFLARE_PROXY_PORT_DEFAULT=docker_exposed_port
+AUTH_USER=admin
+AUTH_PASSWORD=admin

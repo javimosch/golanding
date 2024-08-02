@@ -1,0 +1,157 @@
+<!-- views/partials/LandingsManageMetadata.ejs -->
+<div class="mb-4">
+  <button 
+    id="metadataToggle" 
+    class="flex justify-between items-center w-full text-lg font-medium text-gray-700 mb-2 bg-gray-100 p-2 rounded"
+    onclick="toggleMetadata()"
+  >
+    <span>Metadata</span>
+    <svg id="metadataArrow" class="w-5 h-5 transform transition-transform duration-200" fill="currentColor" viewBox="0 0 20 20">
+      <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/>
+    </svg>
+  </button>
+  <div id="metadataContent" class="hidden">
+    <textarea
+      id="landingMetadata"
+      class="border p-2 rounded w-full"
+      rows="10"
+      placeholder="Enter metadata as JSON"
+    ></textarea>
+  </div>
+</div>
+
+<!-- New Deployment Section -->
+
+
+<% if (env.LP_ALLOW_DEPLOYMENT_SECTION !== '0') { %>
+<div class="mb-4">
+  <button 
+    id="deploymentToggle" 
+    class="flex justify-between items-center w-full text-lg font-medium text-gray-700 mb-2 bg-gray-100 p-2 rounded"
+    onclick="toggleDeployment()"
+  >
+    <span>Deployment</span>
+    <svg id="deploymentArrow" class="w-5 h-5 transform transition-transform duration-200" fill="currentColor" viewBox="0 0 20 20">
+      <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/>
+    </svg>
+  </button>
+  <div id="deploymentContent" class="hidden">
+    <div class="mb-4">
+      <label for="domains" class="block text-sm font-medium text-gray-700">Domains (comma separated)</label>
+      <input
+        type="text"
+        id="domains"
+        class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+        placeholder="example.com, subdomain.example.com"
+        onchange="updateDomains(this.value)"
+      />
+      <% if (env.PROXYFLARE_DOMAINS_WHITELIST_PARTIAL && env.PROXYFLARE_DOMAINS_WHITELIST_PARTIAL.trim() !== '') { %>
+        <span class="text-sm text-gray-600 mt-1 block">
+          Allowed domains must include: 
+          <strong class="font-medium text-indigo-600">
+            <%= env.PROXYFLARE_DOMAINS_WHITELIST_PARTIAL.trim() %>
+          </strong>
+        </span>
+      <% } %>
+
+      <!-- Add this after the domains input -->
+      <div id="domainLinksList" class="mt-2"></div>
+
+      
+    </div>
+  </div>
+</div>
+<% } %>
+
+<script>
+  function toggleMetadata() {
+    const content = document.getElementById('metadataContent');
+    const arrow = document.getElementById('metadataArrow');
+    content.classList.toggle('hidden');
+    arrow.classList.toggle('rotate-180');
+  }
+
+  function toggleDeployment() {
+    const content = document.getElementById('deploymentContent');
+    const arrow = document.getElementById('deploymentArrow');
+    content.classList.toggle('hidden');
+    arrow.classList.toggle('rotate-180');
+  }
+
+  function updateDomains(domains) {
+    const metadataTextarea = document.getElementById('landingMetadata');
+    let metadata = {};
+    try {
+      metadata = JSON.parse(metadataTextarea.value);
+    } catch (e) {
+      // If parsing fails, start with an empty object
+    }
+
+    // Update or create the deployment.domains field
+    metadata.deployment = metadata.deployment || {};
+    metadata.deployment.domains = domains.split(',').map(domain => domain.trim());
+
+    // Update the metadata textarea
+    metadataTextarea.value = JSON.stringify(metadata, null, 2);
+
+
+    // Render the domain links
+    renderDomainLinks(metadata?.deployment?.domains);
+  }
+
+
+  function renderDomainLinks(domains) {
+    const domainLinksList = document.getElementById('domainLinksList');
+    if(!domainLinksList){
+      return
+    }
+    domainLinksList.innerHTML = '';
+
+    if (domains && domains.length > 0) {
+      const ul = document.createElement('ul');
+      ul.className = 'list-disc pl-5 space-y-1';
+
+      domains.forEach(domain => {
+        const li = document.createElement('li');
+        const a = document.createElement('a');
+        a.href = `https://${domain}`;
+        a.target = '_blank';
+        a.rel = 'noopener noreferrer';
+        a.textContent = domain;
+        a.className = 'text-blue-600 hover:text-blue-800';
+        li.appendChild(a);
+        ul.appendChild(li);
+      });
+
+      domainLinksList.appendChild(ul);
+    }
+  }
+
+   // Call renderDomainLinks on page load to display any existing domains
+   document.addEventListener('DOMContentLoaded', () => {
+    const metadataTextarea = document.getElementById('landingMetadata');
+    try {
+      const metadata = JSON.parse(metadataTextarea.value);
+      if (metadata.deployment && metadata.deployment.domains) {
+        renderDomainLinks(metadata.deployment.domains);
+      }
+    } catch (e) {
+      // If parsing fails, do nothing
+    }
+  });
+
+  // Add an event listener to the metadata textarea to update domain links when metadata changes
+  document.getElementById('landingMetadata').addEventListener('change', () => {
+    try {
+      const metadata = JSON.parse(document.getElementById('landingMetadata').value);
+      if (metadata.deployment && metadata.deployment.domains) {
+        renderDomainLinks(metadata.deployment.domains);
+      } else {
+        document.getElementById('domainLinksList').innerHTML = '';
+      }
+    } catch (e) {
+      // If parsing fails, clear the domain links list
+      document.getElementById('domainLinksList').innerHTML = '';
+    }
+  });
+</script>

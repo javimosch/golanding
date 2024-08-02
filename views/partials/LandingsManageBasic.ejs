@@ -1,0 +1,17 @@
+<!-- views/partials/LandingsManageBasic.ejs -->
+
+<div class="mb-4">
+  <label for="landingSelect" class="block text-sm font-medium text-gray-700">Select Landing Page</label>
+  <select id="landingSelect"
+    class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+    onchange="handleSelectChange(event)">
+    <option value="">(Create new)</option>
+  </select>
+</div>
+<div class="mb-4">
+  <label for="landingName" class="block text-sm font-medium text-gray-700">Landing Name</label>
+  <div class="flex items-center">
+    <input type="text" id="landingName" class="border p-2 rounded w-full" placeholder="Landing Name" />
+    
+  </div>
+</div>
