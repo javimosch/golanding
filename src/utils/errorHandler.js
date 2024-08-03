@@ -19,7 +19,7 @@ const errorHandler = (fn) => async (req, res, next) => {
     console.error(errorLog);
 
     // Send error response
-    res.status(500).json({ message: 'An error occurred', error: error.message });
+    res.status(500).json({ message: 'Server error' });
   }
 };
 

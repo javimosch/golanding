@@ -46,7 +46,7 @@ router.post(
 
     const newLandingPage = await landingPage.save();
     await global.logEvent("LANDING_PAGE_CREATE", { payload });
-    await global.updatePreviewAndLogEvent(landingPage)
+    await global.updatePreviewAndLogEvent(landingPage);
     try {
       const deploymentInfo = await global.deployLandingPage(newLandingPage);
       return res
@@ -57,6 +57,59 @@ router.post(
     }
 
     return res.status(201).json(newLandingPage);
+  })
+);
+
+router.put(
+  "/partial",
+  //validate(LandingPage.schema),
+  errorHandler(async (req, res) => {
+    let previewId = req.body.previewId;
+    let {editableValue, newContent} = req.body
+    if (global.previewLandingPages[previewId]) {
+
+      let {sections, name}  = global.previewLandingPages[previewId]
+      
+      const cheerio = require("cheerio");
+      
+      sections = sections.map(html=>{
+        const $ = cheerio.load(html);
+        console.log("EDITING",$("[data-editable='"+editableValue+"']").length)
+        $("[data-editable='"+editableValue+"']").html(newContent)
+        return $.html();
+      })
+      
+      global.previewLandingPages[previewId].sections = sections
+
+      const landingPage = await LandingPage.findOne({ name });
+      if(landingPage){
+        landingPage.sections=sections
+        await landingPage.save()
+        await global.logEvent("LANDING_PAGE_UPDATE_PARTIAL_SUCCESS", {
+          reason:'record not found'
+        });
+        return res
+        .status(201)
+        .json({ result:'success' });
+      }else{
+        await global.logEvent("LANDING_PAGE_UPDATE_PARTIAL_FAIL", {
+          reason:'record not found'
+        });
+        return res
+        .status(400)
+        .json({ result:'preview found but record not found' });
+      }
+      
+      
+    }else{
+      await global.logEvent("LANDING_PAGE_UPDATE_PARTIAL_FAIL", {
+        reason:'preview not found'
+      });
+      return res
+        .status(400)
+        .json({ result:'preview not found' });
+    }
+    
   })
 );
 
@@ -82,7 +135,7 @@ router.put(
       name: updatedLandingPage.name,
     });
 
-    await global.updatePreviewAndLogEvent(landingPage)
+    await global.updatePreviewAndLogEvent(landingPage);
 
     try {
       const deploymentInfo = await global.deployLandingPage(landingPage);
@@ -117,8 +170,7 @@ router.delete(
   })
 );
 
-// Global variable to store preview data
-global.previewLandingPages = {};
+
 
 // Add this new route for preview
 router.post(
@@ -131,29 +183,9 @@ router.post(
       name: req.body.name,
     };
 
-    // Reuse any existing preview with the same name
-    for(let key of Object.keys(global.previewLandingPages)){
-      if (global.previewLandingPages[key].name === payload.name) {
-        //delete global.previewLandingPages[key];
-        global.previewLandingPages[key] = payload;
-        await global.logEvent("LANDING_PAGE_PREVIEW_CREATE", { payload });
-        return res.status(201).json({ previewId:key, ...payload });
-      }
-    }
+    let previewId = await global.updatePreviewAndLogEvent(payload)
+
     
-
-    // Generate a unique preview ID
-    const previewId =
-      Date.now().toString(36) + Math.random().toString(36).substr(2);
-
-    // Store the preview data in the global variable
-    global.previewLandingPages[previewId] = payload;
-
-    // Set an expiration time for the preview data (e.g., 1 hour)
-    setTimeout(() => {
-      delete global.previewLandingPages[previewId];
-    }, 60 * 60 * 1000); // 1 hour in milliseconds
-
     await global.logEvent("LANDING_PAGE_PREVIEW_CREATE", { payload });
     res.status(201).json({ previewId, ...payload });
   })
@@ -190,9 +222,9 @@ function getLandingRenderRoutes() {
     "/preview/:previewId",
     errorHandler(async (req, res) => {
       const previewId = req.params.previewId;
-      const previewData = global.previewLandingPages[previewId];
+      let landingItem = global.previewLandingPages[previewId];
 
-      if (!previewData) {
+      if (!landingItem) {
         await global.logEvent("LANDING_PAGE_PREVIEW_NOT_FOUND", { previewId });
         return res
           .status(404)
@@ -201,7 +233,7 @@ function getLandingRenderRoutes() {
 
       await global.logEvent("LANDING_PAGE_PREVIEW_FETCH", { previewId });
 
-      global.renderLandingPage(res, previewData);
+      global.renderLandingPage(res, landingItem);
     })
   );
   return router;
