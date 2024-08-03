@@ -46,7 +46,7 @@ router.post(
 
     const newLandingPage = await landingPage.save();
     await global.logEvent("LANDING_PAGE_CREATE", { payload });
-
+    await global.updatePreviewAndLogEvent(landingPage)
     try {
       const deploymentInfo = await global.deployLandingPage(newLandingPage);
       return res
@@ -81,6 +81,8 @@ router.put(
     await global.logEvent("LANDING_PAGE_UPDATE", {
       name: updatedLandingPage.name,
     });
+
+    await global.updatePreviewAndLogEvent(landingPage)
 
     try {
       const deploymentInfo = await global.deployLandingPage(landingPage);
