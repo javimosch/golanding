@@ -7,9 +7,9 @@ const landingPageSchema = new mongoose.Schema({
     default:{},
     required: false,
   },
-  sections: {
-    type: [String], // Array of strings (HTML)
-    required: true,
+  html:{
+    type:String,
+    required:true
   },
   name: {
     type: String,

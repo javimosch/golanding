@@ -1,0 +1,134 @@
+<script>
+    function initializeMetadataWatcher() {
+        // Initialize window._metadata if it doesn't exist
+        if (typeof window._metadata === 'undefined') {
+          window._metadata = {};
+        }
+      
+        // Function to update the textarea with the current metadata
+        function updateTextarea() {
+          const textarea = document.getElementById('landingMetadata');
+          if(!textarea){
+            return textarea
+          }
+          let existingMetadata = {};
+      
+          // Parse existing JSON from textarea
+          try {
+            existingMetadata = JSON.parse(textarea.value);
+          } catch (e) {
+            console.warn('Invalid JSON in textarea, starting fresh');
+          }
+      
+          // Deep merge function
+          function deepMerge(target, source) {
+            for (let key in source) {
+              if (source.hasOwnProperty(key)) {
+                if (source[key] instanceof Object && key in target) {
+                  deepMerge(target[key], source[key]);
+                } else {
+                  target[key] = source[key];
+                }
+              }
+            }
+            return target;
+          }
+      
+          // Merge window._metadata with existing metadata
+          const mergedMetadata = deepMerge(existingMetadata, window._metadata);
+      
+          // Update textarea with merged JSON
+          textarea.value = JSON.stringify(mergedMetadata, null, 2);
+        }
+      
+        // Create a deep proxy to watch for changes to window._metadata
+        function createDeepProxy(target, handler) {
+          if (typeof target !== 'object' || target === null) {
+            return target;
+          }
+      
+          const proxyHandler = {
+            get(target, key) {
+              const value = Reflect.get(target, key);
+              return createDeepProxy(value, handler);
+            },
+            set(target, key, value) {
+              const result = Reflect.set(target, key, value);
+              handler(target);
+              return result;
+            },
+            deleteProperty(target, key) {
+              const result = Reflect.deleteProperty(target, key);
+              handler(target);
+              return result;
+            }
+          };
+      
+          return new Proxy(target, proxyHandler);
+        }
+      
+        // Initialize the proxy
+        window._metadata = createDeepProxy(window._metadata, () => {
+          updateTextarea();
+        });
+      
+        // Update the textarea initially
+        updateTextarea();
+      }
+      
+      // Call the function to start watching metadata
+      //initializeMetadataWatcher();
+      
+</script>
+<script>
+  function askAI() {
+    // Create a loader element
+    const loader = document.createElement('div');
+    loader.className = 'fixed bottom-4 right-4 w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin';
+    loader.style.zIndex=99999
+    document.body.appendChild(loader); // Append loader to the body
+
+    // Prompt the user to enter their query
+    const query = prompt("Enter your query for the AI:");
+
+    const code = window.editorWindow.getValue();
+
+    // If the user cancels the prompt or enters an empty query, do nothing
+    if (!query) {
+        document.body.removeChild(loader); // Remove loader
+        return alert("NO QUERY");
+    }
+    if (!code) {
+        document.body.removeChild(loader); // Remove loader
+        return alert("NO CODE");
+    }
+
+    // Send the query to the AI API
+    fetch('/api/ai/query', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ query, code })
+    })
+    .then(response => response.json())
+    .then(data => {
+        onAIQuery(data);
+    })
+    .catch(error => {
+        console.error('Error querying AI:', error);
+    })
+    .finally(() => {
+        document.body.removeChild(loader); // Remove loader after operation is complete
+    });
+}
+  
+  // Example onAIQuery function
+  function onAIQuery(data) {
+    console.log('AI Response:', data);
+    // Implement your logic to handle the AI response here
+
+    window.editorWindow.setValue(data.code)
+  }
+  
+</script>

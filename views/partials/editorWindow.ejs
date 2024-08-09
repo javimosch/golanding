@@ -1,0 +1,359 @@
+<div class="floating-window" id="editorWindow" style="display: none;">
+  <div class="window-header flex justify-between items-center bg-gray-100 p-2 cursor-move" id="windowHeader">
+    <span id="windowState" class="text-sm">Normal</span>
+    <div class="toolbar flex space-x-2" id="toolbar">
+      <!-- Buttons will be dynamically added here -->
+    </div>
+  </div>
+  <div class="resize-handle top-left" id="resizeHandleTopLeft"></div>
+  <div class="resize-handle bottom-right" id="resizeHandleBottomRight"></div>
+  <div class="resize-handle side" id="resizeHandleSide" style="display: none;"></div>
+  <div class="codemirror-container" id="codemirrorContainer"></div>
+</div>
+<button id="minimizeButton" class="fixed right-2 bottom-2 bg-blue-500 text-white px-4 py-2 rounded shadow" style="display: none;">Open Editor</button>
+
+<style>
+  .floating-window {
+    position: fixed;
+    width: 50vw;
+    height: 30vh;
+    border: 1px solid #ccc;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    background-color: #fff;
+    overflow: hidden;
+    z-index: 1000;
+    min-width: 20vw;
+    min-height: 10vh;
+  }
+  .floating-window.maximized {
+    width: 100vw;
+    height: 100vh;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    resize: none; /* Disable resizing when maximized */
+  }
+  .floating-window.docked {
+    width: 30vw;
+    height: 100vh;
+    top: 0;
+    right: 0;
+    left: auto;
+    bottom: 0;
+    resize: none; /* Disable resizing when docked */
+  }
+  .resize-handle {
+    width: 15px;
+    height: 15px;
+    background: #ccc;
+    position: absolute;
+    cursor: nwse-resize;
+    z-index: 1001;
+  }
+  .resize-handle.top-left {
+    top: 0;
+    left: 0;
+    cursor: nwse-resize;
+  }
+  .resize-handle.bottom-right {
+    bottom: 0;
+    right: 0;
+    cursor: nwse-resize;
+  }
+  .resize-handle.side {
+    width: 15px;
+    height: 100%;
+    background: #ccc;
+    position: absolute;
+    left: 0;
+    top: 0;
+    cursor: ew-resize;
+    z-index: 1001;
+  }
+  .codemirror-container {
+    height: calc(100% - 40px); /* Adjust for header height */
+  }
+  .CodeMirror {
+    height: 100%;
+    width: 100%;
+  }
+</style>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const editorWindow = document.getElementById('editorWindow');
+    const windowHeader = document.getElementById('windowHeader');
+    const resizeHandleTopLeft = document.getElementById('resizeHandleTopLeft');
+    const resizeHandleBottomRight = document.getElementById('resizeHandleBottomRight');
+    const resizeHandleSide = document.getElementById('resizeHandleSide');
+    const codemirrorContainer = document.getElementById('codemirrorContainer');
+    const windowStateSpan = document.getElementById('windowState');
+    const minimizeButton = document.getElementById('minimizeButton');
+    const toolbar = document.getElementById('toolbar');
+
+    // Configuration
+    const config = {
+      startHidden: true, // Set this to true or false to control initial visibility
+      minimizeButtonLabel: 'Open Editor', // Default label for minimize button
+      toolbarButtons: [
+        { icon: 'fa-window-minimize', callback: toggleMinimize },
+        { icon: 'fa-expand', callback: toggleMaximize },
+        { icon: 'fa-arrows-alt-h', callback: toggleDock },
+      ],
+    };
+
+    // Initialize CodeMirror
+    const codeMirrorEditor = CodeMirror(codemirrorContainer, {
+      mode: 'xml', // Set mode to XML
+      lineNumbers: true,
+      theme: 'default',
+      lineWrapping: true, // Enable line wrapping
+    });
+
+    // Expose editor and methods to window
+    window.editorWindow = {
+      hide: () => editorWindow.style.display = 'none',
+      show: () => editorWindow.style.display = 'block',
+      setMaximized: () => applyState('maximized'),
+      setDocked: () => applyState('docked'),
+      setNormal: () => applyState('normal'),
+      setMinimized: () => applyState('minimized'),
+      setValue: (value) => codeMirrorEditor.setValue(value),
+      getValue: () => codeMirrorEditor.getValue(),
+      on: (event, handler) => codeMirrorEditor.on(event, handler),
+      off: (event, handler) => codeMirrorEditor.off(event, handler),
+      codeMirrorEditor, // Expose the CodeMirror instance
+      setOptions: (options) => {
+        if (options.minimizeButtonLabel) {
+          minimizeButton.textContent = options.minimizeButtonLabel;
+        }
+        if (options.toolbarButtons) {
+          config.toolbarButtons = options.toolbarButtons;
+          renderToolbar();
+        }
+      },
+    };
+
+    // Render toolbar buttons
+    function renderToolbar() {
+      toolbar.innerHTML = ''; // Clear existing buttons
+      config.toolbarButtons.forEach((btnConfig) => {
+        const button = document.createElement('button');
+        button.innerHTML = `<i class="fas ${btnConfig.icon}"></i>`;
+        button.addEventListener('click', btnConfig.callback);
+        toolbar.appendChild(button);
+      });
+    }
+
+    // Load position, size, and state from localStorage
+    const savedState = JSON.parse(localStorage.getItem('editorWindowState')) || {
+      state: 'normal',
+      width: '50vw',
+      height: '30vh',
+      left: 'auto',
+      top: 'auto',
+      right: '0',
+      bottom: '0',
+    };
+
+    let previousState = savedState.state;
+
+    // Apply saved state
+    applyState(savedState.state);
+
+    // Set initial visibility based on configuration
+    if (!config.startHidden) {
+      editorWindow.style.display = 'block';
+    }
+
+    // Make the window draggable in normal mode
+    let isDragging = false;
+    let offsetX, offsetY;
+
+    windowHeader.addEventListener('mousedown', (e) => {
+      if (savedState.state === 'normal') {
+        isDragging = true;
+        offsetX = e.clientX - editorWindow.offsetLeft;
+        offsetY = e.clientY - editorWindow.offsetTop;
+        document.body.style.userSelect = 'none';
+      }
+    });
+
+    document.addEventListener('mousemove', (e) => {
+      if (isDragging) {
+        editorWindow.style.left = `${e.clientX - offsetX}px`;
+        editorWindow.style.top = `${e.clientY - offsetY}px`;
+      }
+    });
+
+    document.addEventListener('mouseup', () => {
+      if (isDragging) {
+        saveWindowState();
+      }
+      isDragging = false;
+      document.body.style.userSelect = '';
+    });
+
+    // Resize functionality
+    let isResizing = false;
+    let resizeDirection;
+
+    function handleResize(e) {
+      if (isResizing) {
+        let newWidth, newHeight;
+        if (resizeDirection === 'top-left') {
+          newWidth = editorWindow.offsetWidth - (e.clientX - editorWindow.getBoundingClientRect().left);
+          newHeight = editorWindow.offsetHeight - (e.clientY - editorWindow.getBoundingClientRect().top);
+          if (newWidth > window.innerWidth * 0.2 && newHeight > window.innerHeight * 0.1) {
+            editorWindow.style.width = `${newWidth}px`;
+            editorWindow.style.height = `${newHeight}px`;
+            editorWindow.style.left = `${e.clientX}px`;
+            editorWindow.style.top = `${e.clientY}px`;
+          }
+        } else if (resizeDirection === 'bottom-right') {
+          newWidth = e.clientX - editorWindow.getBoundingClientRect().left;
+          newHeight = e.clientY - editorWindow.getBoundingClientRect().top;
+          if (newWidth > window.innerWidth * 0.2 && newHeight > window.innerHeight * 0.1) {
+            editorWindow.style.width = `${newWidth}px`;
+            editorWindow.style.height = `${newHeight}px`;
+          }
+        } else if (resizeDirection === 'side') {
+          newWidth = window.innerWidth - e.clientX;
+          if (newWidth > window.innerWidth * 0.2) {
+            editorWindow.style.width = `${newWidth}px`;
+          }
+        }
+        codeMirrorEditor.refresh(); // Refresh CodeMirror to adjust to new size
+      }
+    }
+
+    resizeHandleTopLeft.addEventListener('mousedown', (e) => {
+      isResizing = true;
+      resizeDirection = 'top-left';
+      document.body.style.userSelect = 'none';
+      e.preventDefault(); // Prevent text selection
+    });
+
+    resizeHandleBottomRight.addEventListener('mousedown', (e) => {
+      isResizing = true;
+      resizeDirection = 'bottom-right';
+      document.body.style.userSelect = 'none';
+      e.preventDefault(); // Prevent text selection
+    });
+
+    resizeHandleSide.addEventListener('mousedown', (e) => {
+      isResizing = true;
+      resizeDirection = 'side';
+      document.body.style.userSelect = 'none';
+      e.preventDefault(); // Prevent text selection
+    });
+
+    document.addEventListener('mousemove', handleResize);
+
+    document.addEventListener('mouseup', () => {
+      if (isResizing) {
+        saveWindowState();
+      }
+      isResizing = false;
+      document.body.style.userSelect = '';
+    });
+
+    // Minimize button logic
+    minimizeButton.addEventListener('click', () => {
+      applyState(previousState);
+    });
+
+    function toggleMinimize() {
+      if (savedState.state === 'minimized') {
+        applyState(previousState);
+      } else {
+        previousState = savedState.state;
+        applyState('minimized');
+      }
+    }
+
+    function toggleMaximize() {
+      if (savedState.state === 'maximized') {
+        applyState('normal');
+      } else {
+        saveWindowState(); // Save current state before maximizing
+        applyState('maximized');
+      }
+    }
+
+    function toggleDock() {
+      if (savedState.state === 'docked') {
+        applyState('normal');
+      } else {
+        saveWindowState(); // Save current state before docking
+        applyState('docked');
+      }
+    }
+
+    function applyState(state) {
+      savedState.state = state;
+      if (state === 'maximized') {
+        editorWindow.classList.add('maximized');
+        editorWindow.classList.remove('docked');
+        editorWindow.style.left = '0';
+        editorWindow.style.top = '0';
+        editorWindow.style.width = '100vw';
+        editorWindow.style.height = '100vh';
+        windowStateSpan.textContent = 'Maximized';
+        resizeHandleSide.style.display = 'none';
+        editorWindow.style.display = 'block';
+        minimizeButton.style.display = 'none';
+      } else if (state === 'docked') {
+        editorWindow.classList.add('docked');
+        editorWindow.classList.remove('maximized');
+        editorWindow.style.width = '30vw';
+        editorWindow.style.height = '100vh';
+        editorWindow.style.right = '0';
+        editorWindow.style.top = '0';
+        editorWindow.style.left = 'auto';
+        editorWindow.style.bottom = '0';
+        windowStateSpan.textContent = 'Docked';
+        resizeHandleSide.style.display = 'block';
+        editorWindow.style.display = 'block';
+        minimizeButton.style.display = 'none';
+      } else if (state === 'minimized') {
+        editorWindow.style.display = 'none';
+        minimizeButton.style.display = 'block';
+      } else {
+        editorWindow.classList.remove('maximized');
+        editorWindow.classList.remove('docked');
+        editorWindow.style.width = savedState.width;
+        editorWindow.style.height = savedState.height;
+        editorWindow.style.left = savedState.left;
+        editorWindow.style.top = savedState.top;
+        editorWindow.style.right = savedState.right;
+        editorWindow.style.bottom = savedState.bottom;
+        windowStateSpan.textContent = 'Normal';
+        resizeHandleSide.style.display = 'none';
+        editorWindow.style.display = 'block';
+        minimizeButton.style.display = 'none';
+      }
+      localStorage.setItem('editorWindowState', JSON.stringify(savedState));
+      codeMirrorEditor.refresh(); // Refresh CodeMirror to adjust to new size
+    }
+
+    function saveWindowState() {
+      savedState.width = editorWindow.style.width;
+      savedState.height = editorWindow.style.height;
+      savedState.left = editorWindow.style.left;
+      savedState.top = editorWindow.style.top;
+      savedState.right = editorWindow.style.right;
+      savedState.bottom = editorWindow.style.bottom;
+      localStorage.setItem('editorWindowState', JSON.stringify(savedState));
+    }
+
+    // Ensure CodeMirror fills the container
+    setInterval(() => {
+      codeMirrorEditor.refresh();
+    }, 500); // Adjust interval as needed
+
+    // Initial rendering of toolbar
+    renderToolbar();
+  });
+</script>

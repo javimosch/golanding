@@ -4,39 +4,28 @@
 
   document.addEventListener("DOMContentLoaded", () => {
     fetchLandings();
-  });
 
-  function fetchLandings() {
-    fetch("/api/landing-pages")
-      .then((response) => response.json())
-      .then((data) => {
-        //const landingSelect = document.getElementById("landingSelect");
-        landingSelect.innerHTML =
-          '<option value="">(Create new)</option>';
-        data.forEach((landing) => {
-          const option = document.createElement("option");
-          option.value = landing.name;
-          option.textContent = landing.name;
-          landingSelect.appendChild(option);
-        });
+    setTimeout(()=>{
+      editorWindow.on('change', ()=>{
+        window.updatePreview&&window.updatePreview(editorWindow.getValue())
       });
-  }
+      if(window.landingItem){
+        editorWindow.setValue(window.landingItem.html)
+      }
+    },1000)
+  });
 
   function previewLanding() {
     const name = document.getElementById("landingName").value;
-    const metadata = JSON.parse(
-      document.getElementById("landingMetadata").value || "{}"
-    );
-    const sections = Array.from(
-      document.getElementById("sectionsContainer").children
-    ).map((textarea) => textarea.value);
-  
+    const metadata = getMetadata()
+    const html = `<h1>TEST</h1>`
+
     fetch("/api/landing-pages/preview", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ name, metadata, sections }),
+      body: JSON.stringify({ name, metadata, html }),
     })
       .then((response) => response.json())
       .then((data) => {
@@ -49,120 +38,124 @@
         console.error("Error creating preview:", error);
       });
   }
-  
 
-  function handleSelectChange(event) {
-    if (!event.target.value) {
-      Preview.style.display="none"
-      deleteButton.style.display="none"
-      updateButton.style.display="none"
-      
-      document.getElementById("landingName").value = "";
-      document.getElementById("landingMetadata").value = JSON.stringify(
-        {},
-        null,
-        2
-      );
-      renderSections([]);
-      
-      return;
-    }
-    const landingName = event.target.value;
+  function setNew() {
+    document.querySelector('[data-tab="editor"]').disabled = true;
+    document.querySelector('[data-tab="deploy"]').disabled = true
+    window.localStorage.landingItemName=""
+    Preview.style.display = "none"
+    deleteButton.style.display = "none"
+    updateButton.style.display = "none"
+    createButton.style.display = 'inline-block'
+
+    document.getElementById("landingName").value = "";
+    document.getElementById("landingMetadata").value = JSON.stringify(
+      {},
+      null,
+      2
+    );
+    updateHeaderDropdownLabel();
+    updatePreview("")
+    window.editorWindow.setValue("")
+  }
+
+
+
+  function setExisting(landingName) {
+
     fetch(`/api/landing-pages/${landingName}`)
       .then((response) => response.json())
       .then((data) => {
         selectedLanding = data;
+
+        document.querySelector('[data-tab="editor"]').disabled = false;
+        
+        document.querySelector('[data-tab="deploy"]').disabled = false
+
         document.getElementById("landingName").value = data.name;
         document.getElementById("landingMetadata").value = JSON.stringify(
-          data.metadata||{},
+          data.metadata || {},
           null,
           2
         );
-        renderSections(data.sections);
+
+        window.landingItem = data
+        window.localStorage.landingItemName = data.name
+        updateHeaderDropdownLabel(data.name);
+        window.editorWindow.setValue(data.html)
+        updatePreview(data.html)
 
         renderDomainLinks(data?.metadata?.deployment?.domains);
 
-        stagingUrlLink.href=`${location.origin}/page/${data.name}`
-        stagingUrlText.innerHTML=`${location.origin}/page/${data.name}`
-        
-        prodUrlLi.style.display="inline-block"
-        <% if (env.LP_ALLOW_DEPLOYMENT_SECTION == '0' && env.LP_DEPLOYMENT_DOMAIN_AFFIX) { %>
-        prodUrlLink.href=`http://${data.name}<%- env.LP_DEPLOYMENT_DOMAIN_AFFIX%>`
-        prodUrlText.innerHTML=`http://${data.name}<%- env.LP_DEPLOYMENT_DOMAIN_AFFIX%>`
-        <% } else{%>
-          if(data?.metadata?.deployment?.domains.length>0){
-            prodUrlLink.href=`http://${data?.metadata?.deployment?.domains[0]}`
-            prodUrlText.innerHTML=`http://${data?.metadata?.deployment?.domains[0]}`
-          }else{
-            prodUrlLi.style.display="none"
+        stagingUrlLink.href = `${location.origin}/page/${data.name}`
+        stagingUrlText.innerHTML = `${location.origin}/page/${data.name}`
+
+        prodUrlLi.style.display = "inline-block"
+          <% if (env.LP_ALLOW_DEPLOYMENT_SECTION == '0' && env.LP_DEPLOYMENT_DOMAIN_AFFIX) { %>
+            prodUrlLink.href=`http://${data.name}<%- env.LP_DEPLOYMENT_DOMAIN_AFFIX%>`
+            prodUrlText.innerHTML = `http://${data.name}<%- env.LP_DEPLOYMENT_DOMAIN_AFFIX%>`
+              <% } else {%>
+          if (data?.metadata?.deployment?.domains.length > 0) {
+            prodUrlLink.href = `http://${data?.metadata?.deployment?.domains[0]}`
+            prodUrlText.innerHTML = `http://${data?.metadata?.deployment?.domains[0]}`
+          } else {
+            prodUrlLi.style.display = "none"
           }
         <% } %>
 
-        Preview.style.display="inline-block"
-        updateButton.style.display="inline-block"
-        deleteButton.style.display="inline-block"
+          createButton.style.display="none"
+        Preview.style.display = "inline-block"
+        updateButton.style.display = "inline-block"
+        deleteButton.style.display = "inline-block"
       });
   }
 
-  function renderSections(sections) {
-    const sectionsContainer = document.getElementById("sectionsContainer");
-    sectionsContainer.innerHTML = "";
-    sections.forEach((section, index) => {
-      const textarea = document.createElement("textarea");
-      textarea.className = "border p-2 rounded w-full mb-2";
-      textarea.rows = 10;
-      textarea.value = section;
-      textarea.dataset.index = index;
-      sectionsContainer.appendChild(textarea);
-    });
+  function handleSelectChange(event) {
+    if (!event.target.value) {
+      setNew()
+    } else {
+      setExisting(event.target.value)
+    }
   }
 
-  function addSection() {
-    const sectionsContainer = document.getElementById("sectionsContainer");
-    const textarea = document.createElement("textarea");
-    textarea.className = "border p-2 rounded w-full mb-2";
-    textarea.rows = 10;
-    sectionsContainer.appendChild(textarea);
+  function getMetadata() {
+    let metadata = JSON.parse(
+      document.getElementById("landingMetadata").value || "{}"
+    );
+    return Object.assign(metadata, window?._metadata || {})
   }
 
   function createLanding() {
     const name = document.getElementById("landingName").value;
-    const metadata = JSON.parse(
-      document.getElementById("landingMetadata").value || "{}"
-    );
-    const sections = Array.from(
-      document.getElementById("sectionsContainer").children
-    ).map((textarea) => textarea.value);
+    const metadata = getMetadata()
+    const html = `<h1>TEST</h1>`
 
     fetch("/api/landing-pages", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ name, metadata, sections }),
+      body: JSON.stringify({ name, metadata, html }),
     })
       .then((response) => response.json())
       .then((data) => {
         console.info("Landing page created successfully");
         fetchLandings();
+        setExisting(name)
       });
   }
 
   function updateLanding() {
     const name = document.getElementById("landingName").value;
-    const metadata = JSON.parse(
-      document.getElementById("landingMetadata").value || "{}"
-    );
-    const sections = Array.from(
-      document.getElementById("sectionsContainer").children
-    ).map((textarea) => textarea.value);
+    const metadata = getMetadata()
+    const html = `<h1>TEST</h1>`
 
     fetch(`/api/landing-pages/${name}`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ name, metadata, sections }),
+      body: JSON.stringify({ name, metadata, html }),
     })
       .then((response) => response.json())
       .then((data) => {
@@ -181,9 +174,15 @@
       .then((data) => {
         console.info("Landing page deleted successfully");
         fetchLandings();
-        document.getElementById("landingName").value = "";
-        document.getElementById("landingMetadata").value = "";
-        document.getElementById("sectionsContainer").innerHTML = "";
+        setNew()
       });
   }
+
+  function loadActiveLandingItemFromCache(){
+    if(window.localStorage.landingItemName){
+      setExisting(window.localStorage.landingItemName)
+    }
+  }
+
+  loadActiveLandingItemFromCache()
 </script>

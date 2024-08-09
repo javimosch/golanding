@@ -39,7 +39,7 @@ router.post(
   errorHandler(async (req, res) => {
     let payload = {
       metadata: req.body.metadata || {},
-      sections: req.body.sections,
+      html: req.body.html,
       name: req.body.name,
     };
     const landingPage = new LandingPage(payload);
@@ -65,51 +65,64 @@ router.put(
   //validate(LandingPage.schema),
   errorHandler(async (req, res) => {
     let previewId = req.body.previewId;
-    let {editableValue, newContent} = req.body
+    let { editableValue, newContent } = req.body;
     if (global.previewLandingPages[previewId]) {
+      let { html, name } = global.previewLandingPages[previewId];
 
-      let {sections, name}  = global.previewLandingPages[previewId]
-      
       const cheerio = require("cheerio");
-      
-      sections = sections.map(html=>{
-        const $ = cheerio.load(html);
-        console.log("EDITING",$("[data-editable='"+editableValue+"']").length)
-        $("[data-editable='"+editableValue+"']").html(newContent)
-        return $.html();
-      })
-      
-      global.previewLandingPages[previewId].sections = sections
+
+      const genHtml = (html, hideEditableAttr) => {
+        let hasHtml = html.includes("<html");
+          let hasHead = html.includes("<head");
+          const $ = cheerio.load(html);
+          console.log(
+            "EDITING",
+            $("[data-editable='" + editableValue + "']").length
+          );
+          $("[data-editable='" + editableValue + "']").html(newContent);
+          if (hideEditableAttr) {
+            $("[data-editable='" + editableValue + "']").removeAttr(
+              "data-editable"
+            );
+          }
+          html = $.html();
+          if (!hasHead && !hasHtml) {
+            html = html
+              .split("<html><head></head><body>")
+              .join("")
+              .split("</body></html>")
+              .join("");
+          }
+          return html;
+      };
+
+      global.previewLandingPages[previewId].html = genHtml(
+        html,
+        false
+      );
 
       const landingPage = await LandingPage.findOne({ name });
-      if(landingPage){
-        landingPage.sections=sections
-        await landingPage.save()
+      if (landingPage) {
+        landingPage.html = genHtml(html, true);
+        await landingPage.save();
         await global.logEvent("LANDING_PAGE_UPDATE_PARTIAL_SUCCESS", {
-          reason:'record not found'
+          reason: "record not found",
         });
-        return res
-        .status(201)
-        .json({ result:'success' });
-      }else{
+        return res.status(201).json({ result: "success" });
+      } else {
         await global.logEvent("LANDING_PAGE_UPDATE_PARTIAL_FAIL", {
-          reason:'record not found'
+          reason: "record not found",
         });
         return res
-        .status(400)
-        .json({ result:'preview found but record not found' });
+          .status(400)
+          .json({ result: "preview found but record not found" });
       }
-      
-      
-    }else{
+    } else {
       await global.logEvent("LANDING_PAGE_UPDATE_PARTIAL_FAIL", {
-        reason:'preview not found'
+        reason: "preview not found",
       });
-      return res
-        .status(400)
-        .json({ result:'preview not found' });
+      return res.status(400).json({ result: "preview not found" });
     }
-    
   })
 );
 
@@ -127,7 +140,7 @@ router.put(
     }
 
     landingPage.metadata = req.body.metadata || {};
-    landingPage.sections = req.body.sections;
+    landingPage.html = req.body.html;
     landingPage.name = req.body.name;
 
     const updatedLandingPage = await landingPage.save();
@@ -170,8 +183,6 @@ router.delete(
   })
 );
 
-
-
 // Add this new route for preview
 router.post(
   "/preview",
@@ -179,13 +190,12 @@ router.post(
   errorHandler(async (req, res) => {
     let payload = {
       metadata: req.body.metadata || {},
-      sections: req.body.sections,
+      html: req.body.html,
       name: req.body.name,
     };
 
-    let previewId = await global.updatePreviewAndLogEvent(payload)
+    let previewId = await global.updatePreviewAndLogEvent(payload);
 
-    
     await global.logEvent("LANDING_PAGE_PREVIEW_CREATE", { payload });
     res.status(201).json({ previewId, ...payload });
   })

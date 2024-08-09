@@ -1,19 +1,10 @@
 const renderLandingPage = (res, landingPage) => {
-  // Check if the client is requesting HTML
-  const acceptHeader = res.get("Accept");
-  //if (acceptHeader && acceptHeader.includes("text/html")) {
-  // Concatenate all sections HTML
-
-  console.log("RENDER",{
-    sections:landingPage.sections
-  })
-
-  const htmlContent = landingPage.sections.join("");
-
+  const htmlContent = landingPage.html;
   // Wrap the content in a basic HTML structure
   let fullHtml = `
         ${
-          htmlContent.includes("<head")
+          htmlContent.includes("<head") &&
+          !htmlContent.includes("<head></head>")
             ? ""
             : `
           <!DOCTYPE html>
@@ -42,13 +33,9 @@ const renderLandingPage = (res, landingPage) => {
 
   res.setHeader("Content-Type", "text/html");
   return res.send(fullHtml);
-  //}
-
-  // If not requesting HTML, return JSON as before
-  //res.json(landingPage);
 };
 
-function getEditScript(){
+function getEditScript() {
   return `
   <script>
   document.addEventListener('DOMContentLoaded', () => {
@@ -141,7 +128,7 @@ function getEditScript(){
   });
 });
   </script>
-  `
+  `;
 }
 
 module.exports = renderLandingPage;

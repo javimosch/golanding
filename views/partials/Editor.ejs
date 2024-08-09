@@ -1,0 +1,48 @@
+
+<style>
+    .CodeMirror {
+      border: 1px solid #ddd;
+      height: 800px !important; /* Set a fixed height */
+      width: 100%;
+      resize: vertical;
+      overflow: auto !important;
+    }
+    #fullscreenEditor {
+      width: 100%;
+      height: 800px; /* Set the container height */
+    }
+  </style>
+
+<div id="fullscreenEditor"></div>
+
+<script>
+    const fullscreenEditor = document.getElementById('fullscreenEditor');
+  
+    editorInstance = CodeMirror(fullscreenEditor, {
+      mode: 'xml',
+      lineNumbers: true,
+      theme: 'default',
+      lineWrapping: true,
+      viewportMargin: Infinity,
+      autoFocus: true,
+    });
+    editorInstance.setSize('100%', '800px'); // Set a specific height
+    editorInstance.setValue("");
+    window.editorInstance = editorInstance;
+  
+    // Make the editor resizable
+    const resizeObserver = new ResizeObserver(() => {
+      editorInstance.refresh();
+    });
+    resizeObserver.observe(fullscreenEditor);
+  
+    // Add an event listener for manual resizing
+    fullscreenEditor.addEventListener('mouseup', () => {
+      const height = fullscreenEditor.style.height;
+      editorInstance.setSize('100%', height);
+    });
+
+    editorInstance.on('change', ()=>{
+      window.updatePreview&&window.updatePreview(editorInstance.getValue())
+    });
+  </script>

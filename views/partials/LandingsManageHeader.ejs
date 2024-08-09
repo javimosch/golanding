@@ -1,0 +1,88 @@
+<nav class="bg-gray-800 p-4">
+  <div class="mx-auto shadow rounded" style="max-width: 1800px;">
+    <div class="flex items-center justify-center">
+      <div class="relative group">
+        <button id="dropdownButton" class="text-white text-4xl hover:text-gray-300 focus:outline-none">
+          
+          <svg class="w-4 h-4 inline-block ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+            xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+          </svg>
+        </button>
+        <div
+          class="absolute left-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 ease-in-out">
+          <div class="py-1" id="landingDropdown">
+            <!-- Landings will be populated here -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<script>
+  const defaultHeaderDropdownLabel = "Create new"
+
+  function fetchLandings() {
+    fetch("/api/landing-pages")
+      .then((response) => response.json())
+      .then((data) => {
+        const landingDropdown = document.getElementById("landingDropdown");
+        landingDropdown.innerHTML = '<a href="#" class="block px-4 py-2 text-xl text-gray-700 hover:bg-gray-100" onclick="createNewLanding()">Create New</a>';
+        data.forEach((landing) => {
+          const link = document.createElement("a");
+          link.href = "#";
+          link.className = "block px-4 py-2 text-xl text-gray-700 hover:bg-gray-100";
+          link.textContent = landing.name;
+          link.onclick = () => selectLanding(landing.name);
+          landingDropdown.appendChild(link);
+        });
+      });
+  }
+
+  function createNewLanding() {
+    console.log("Creating new landing");
+    handleSelectChange({
+      target: {
+        value: ""
+      }
+    });
+    updateHeaderDropdownLabel(); // Reset to default label
+  }
+
+  function selectLanding(landingName) {
+    console.log(`Selected landing: ${landingName}`);
+    handleSelectChange({
+      target: {
+        value: landingName
+      }
+    });
+    updateHeaderDropdownLabel(landingName);
+  }
+
+  function updateHeaderDropdownLabel(text) {
+    text=text||defaultHeaderDropdownLabel
+    const dropdownButton = document.getElementById('dropdownButton');
+    dropdownButton.textContent = text;
+    dropdownButton.appendChild(createArrow());
+  }
+
+  function createArrow() {
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute("class", "w-4 h-4 inline-block ml-1");
+    svg.setAttribute("fill", "none");
+    svg.setAttribute("stroke", "currentColor");
+    svg.setAttribute("viewBox", "0 0 24 24");
+    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    path.setAttribute("stroke-linecap", "round");
+    path.setAttribute("stroke-linejoin", "round");
+    path.setAttribute("stroke-width", "2");
+    path.setAttribute("d", "M19 9l-7 7-7-7");
+    svg.appendChild(path);
+    return svg;
+  }
+
+  // Call fetchLandings to populate the dropdown
+  //fetchLandings();
+  updateHeaderDropdownLabel()
+</script>

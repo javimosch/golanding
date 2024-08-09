@@ -30,23 +30,21 @@
  ">
   </head>
   <body class="bg-gray-100">
-    <%- include('./partials/header.ejs') -%>
 
-    <div class="container mx-auto p-4 bg-white shadow rounded mt-4">
-      <%- include('./partials/LandingsManageBasic.ejs') -%> <%-
-      
-      include('./partials/LandingsManageSections.ejs') -%> <%-
-      include('./partials/LandingsManageMetadata.ejs') -%> <%-
-      include('./partials/LandingsManageToolbar.ejs') -%> 
-      
-      
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/codemirror.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/codemirror.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/mode/xml/xml.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+<%- include('./partials/editorWindow.ejs') -%> 
+
+    <%- include('./partials/LandingsManagePreScripts.ejs') -%> 
+    <%- include('./partials/LandingsManageHeader.ejs') -%> 
+    <div class="mx-auto p-8 bg-white shadow rounded" style="max-width: 1800px;">
+      <%- include('./partials/LandingsManageToolbar.ejs') -%> 
+      <%- include('./partials/LandingsTopToolbar.ejs') -%> 
+      <%- include('./partials/events.ejs') -%>
     </div>
-
-    <%- include('./partials/LandingsManageDeploymentURLs.ejs') -%>
-    
     <%- include('./partials/LandingsManageScripts.ejs') -%>
-
-    <%- include('./partials/events.ejs') -%>
-    <%- include('./partials/footer.ejs') -%>
   </body>
 </html>

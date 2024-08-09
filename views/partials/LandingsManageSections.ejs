@@ -1,32 +1,257 @@
-<!-- views/partials/LandingsManageSections.ejs -->
+<!-- views/partials/LandingsManageSectionsEditor.ejs -->
 <div class="mb-4">
-  <button 
-    id="sectionsToggle" 
-    class="flex justify-between items-center w-full text-lg font-medium text-gray-700 mb-2 bg-gray-100 p-2 rounded"
-    onclick="toggleSections()"
+  <h2 class="text-xl font-bold mb-4">Sections</h2>
+  <div id="sectionsContainer" class="flex flex-wrap gap-4"></div>
+  <button
+    id="addSectionButton"
+    class="bg-green-500 text-white p-2 rounded mt-4"
+    onclick="addSection()"
   >
-    <span>Sections</span>
-    <svg id="sectionsArrow" class="w-5 h-5 transform transition-transform duration-200" fill="currentColor" viewBox="0 0 20 20">
-      <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/>
-    </svg>
+    Add Section
   </button>
-  <div id="sectionsContent" class="hidden">
-    <div id="sectionsContainer"></div>
-    <button
-      id="addSectionButton"
-      class="bg-green-500 text-white p-2 rounded mt-2"
-      onclick="addSection()"
-    >
-      Add Section
-    </button>
+</div>
+
+<div id="fullscreenOverlay" class="fixed inset-0 bg-gray-900 bg-opacity-75 hidden z-50">
+  <div class="absolute inset-4 bg-white p-4 rounded-lg flex flex-col">
+    <div class="flex justify-between mb-4">
+      <h3 id="fullscreenSectionTitle" class="text-lg font-bold"></h3>
+      <div class="flex gap-5">
+        <button id="askAITab" class="p-2 bg-purple-500 text-white rounded flex items-center" onclick="askAI()" title="Ask AI">
+          <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path>
+          </svg>
+          Ask AI
+        </button>
+        <button id="editorTab" class="p-2 bg-blue-500 text-white rounded" onclick="showEditor()">Editor</button>
+        <button id="previewTab" class="p-2 bg-gray-300 text-black rounded" onclick="showPreview()">Preview</button>
+      </div>
+    </div>
+    <div id="fullscreenEditor" class="flex-grow overflow-auto"></div>
+    <iframe id="previewIframe" class="flex-grow hidden"></iframe>
+    <div class="text-sm text-gray-600 mt-2">Press Esc or Ctrl+Enter to exit full screen, Ctrl+Left for Editor, Ctrl+Right for Preview</div>
   </div>
 </div>
 
+<!-- Include CodeMirror -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/codemirror.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/codemirror.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/mode/xml/xml.min.js"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.14.0/Sortable.min.js"></script>
 <script>
-  function toggleSections() {
-    const content = document.getElementById('sectionsContent');
-    const arrow = document.getElementById('sectionsArrow');
-    content.classList.toggle('hidden');
-    arrow.classList.toggle('rotate-180');
+  let editorInstance;
+  let sections = [];
+
+  
+
+  function createSectionCard(section, index) {
+    
+    
+    if (!window._metadata.sections) {
+      window._metadata.sections = [];
+    }
+  
+    // Ensure there's a metadata entry for this section
+    if (!window._metadata.sections[index]) {
+      window._metadata.sections[index] = { label: `Section ${index + 1}` };
+    }
+  
+    const card = document.createElement("div");
+    card.className = "bg-white shadow-md rounded-lg p-4 w-64";
+    
+    // Create the card content
+    card.innerHTML = `
+    <div class="flex items-center mb-2">
+      <div class="drag-handle cursor-move mr-2">☰</div>
+      <h3 class="text-lg font-semibold cursor-pointer" id="sectionLabel-${index}">${window._metadata.sections[index].label}</h3>
+    </div>
+    <div class="flex justify-between mb-2">
+      <button class="bg-blue-500 text-white p-2 rounded" onclick="expandSection(${index})">Edit</button>
+      <button class="bg-red-500 text-white p-2 rounded" onclick="removeSection(${index})">Remove</button>
+    </div>
+    <div class="text-sm text-gray-600">Size: <span id="sectionSize-${index}">${section.length}</span> characters</div>
+  `;
+  
+    // Add click event to edit the label
+    const labelElement = card.querySelector(`#sectionLabel-${index}`);
+    labelElement.addEventListener('click', () => {
+      const newLabel = prompt("Enter new label for this section:", window._metadata.sections[index].label);
+      if (newLabel !== null) {
+        window._metadata.sections[index].label = newLabel;
+        labelElement.textContent = newLabel;
+      }
+    });
+  
+    // Function to update the section size
+    function updateSectionSize() {
+      document.getElementById(`sectionSize-${index}`).textContent = sections[index].length;
+    }
+  
+    // Add an event listener to update the section size on the fly
+    card.addEventListener('DOMSubtreeModified', updateSectionSize);
+  
+    return card;
   }
+    
+
+  function renderSections() {
+    const sectionsContainer = document.getElementById("sectionsContainer");
+    sectionsContainer.innerHTML = "";
+    sections.forEach((section, index) => {
+      const card = createSectionCard(section, index);
+      sectionsContainer.appendChild(card);
+    });
+     // Initialize Sortable here
+  initSortable();
+  }
+
+  function addSection() {
+    const newIndex = sections.length;
+    sections.push("");
+    if (!window._metadata.sections[newIndex]) {
+      window._metadata.sections[newIndex] = { label: `Section ${newIndex + 1}` };
+    }
+    renderSections();
+  }
+  
+  function removeSection(index) {
+    if (confirm("Are you sure you want to remove this section?")) {
+      sections.splice(index, 1);
+      window._metadata.sections.splice(index, 1);
+      renderSections();
+    }
+  }
+  
+
+  function expandSection(index) {
+    const fullscreenOverlay = document.getElementById('fullscreenOverlay');
+    const fullscreenEditor = document.getElementById('fullscreenEditor');
+    const fullscreenSectionTitle = document.getElementById('fullscreenSectionTitle');
+  
+    fullscreenSectionTitle.textContent = `Editing Section ${index + 1}`;
+    fullscreenOverlay.classList.remove('hidden');
+  
+    if (!editorInstance) {
+      editorInstance = CodeMirror(fullscreenEditor, {
+        mode: 'xml',
+        lineNumbers: true,
+        theme: 'default',
+        lineWrapping: true,
+        viewportMargin: Infinity,
+        autoFocus: true,
+        extraKeys: {
+          'Ctrl-Left': showEditor,
+          'Ctrl-Right': showPreview
+        }
+      });
+      editorInstance.setSize('100%', '100%');
+    }
+  
+    editorInstance.setValue(sections[index] || '');
+
+    window.editorInstance=editorInstance
+  
+    // Update sections on the fly
+    const updateSection = () => {
+      sections[index] = editorInstance.getValue();
+    };
+  
+    // Remove previous onChange handler if it exists
+    editorInstance.off('change', updateSection);
+    // Add new onChange handler
+    editorInstance.on('change', updateSection);
+  
+    function exitFullscreen() {
+      fullscreenOverlay.classList.add('hidden');
+      document.getElementById('previewIframe').classList.add('hidden');
+      document.removeEventListener('keydown', handleKeyDown);
+      editorInstance.off('change', updateSection); // Remove the onChange handler
+      renderSections();
+    }
+  
+    function handleKeyDown(event) {
+      if (event.key === 'Escape' || (event.ctrlKey && event.key === 'Enter')) {
+        exitFullscreen();
+      } else if (event.ctrlKey && event.key === 'ArrowLeft') {
+        showEditor();
+      } else if (event.ctrlKey && event.key === 'ArrowRight') {
+        showPreview();
+      }
+    }
+  
+    document.addEventListener('keydown', handleKeyDown);
+  
+    setTimeout(() => {
+      editorInstance.refresh();
+      editorInstance.focus();
+    }, 10);
+  }
+  
+
+  function showEditor() {
+    document.getElementById('editorTab').classList.add('bg-blue-500', 'text-white');
+    document.getElementById('editorTab').classList.remove('bg-gray-300', 'text-black');
+    document.getElementById('previewTab').classList.add('bg-gray-300', 'text-black');
+    document.getElementById('previewTab').classList.remove('bg-blue-500', 'text-white');
+    document.getElementById('fullscreenEditor').classList.remove('hidden');
+    document.getElementById('previewIframe').classList.add('hidden');
+    if (editorInstance) {
+      editorInstance.focus();
+    }
+  }
+
+  function showPreview() {
+    document.getElementById('previewTab').classList.add('bg-blue-500', 'text-white');
+    document.getElementById('previewTab').classList.remove('bg-gray-300', 'text-black');
+    document.getElementById('editorTab').classList.add('bg-gray-300', 'text-black');
+    document.getElementById('editorTab').classList.remove('bg-blue-500', 'text-white');
+    document.getElementById('fullscreenEditor').classList.add('hidden');
+    document.getElementById('previewIframe').classList.remove('hidden');
+
+    const previewContent = sections.join('\n');
+    const previewIframe = document.getElementById('previewIframe');
+    const iframeDoc = previewIframe.contentDocument || previewIframe.contentWindow.document;
+    iframeDoc.open();
+    iframeDoc.write(previewContent);
+    iframeDoc.close();
+  }
+
+  // Function to load sections data
+  function loadSections(data) {
+    sections = data.sections || [];
+    renderSections();
+  }
+
+  function initSortable() {
+    const sectionsContainer = document.getElementById("sectionsContainer");
+    Sortable.create(sectionsContainer, {
+      animation: 150,
+      handle: '.drag-handle', // Add a drag handle class
+      onEnd: function(evt) {
+        const newIndex = evt.newIndex;
+        const oldIndex = evt.oldIndex;
+        
+        // Update sections array
+        const [movedSection] = sections.splice(oldIndex, 1);
+        sections.splice(newIndex, 0, movedSection);
+        
+        // Update window._metadata.sections
+        const [movedMetadata] = window._metadata.sections.splice(oldIndex, 1);
+        window._metadata.sections.splice(newIndex, 0, movedMetadata);
+  
+        // Re-render sections to update the UI
+        renderSections();
+      }
+    });
+  }
+  
+  
+
+  // Initialize drag and drop
+  document.addEventListener('DOMContentLoaded', function() {
+    const sectionsContainer = document.getElementById("sectionsContainer");
+    
+
+    renderSections();
+  });
 </script>

@@ -1,0 +1,120 @@
+<!-- tabs.ejs -->
+<div class="tabs-container">
+  <div class="flex border-b border-gray-300 justify-center">
+    <button class="tab-button px-4 py-2 text-4xl text-gray-700 hover:text-blue-500 focus:outline-none active" data-tab="basics">Basics</button>
+    <button class="tab-button px-4 py-2 text-4xl text-gray-700 hover:text-blue-500 focus:outline-none" data-tab="editor" disabled>Editor</button>
+    <button class="tab-button px-4 py-2 text-4xl text-gray-700 hover:text-blue-500 focus:outline-none" data-tab="deploy" disabled>Deploy</button>
+    <style>
+      .tab-button:disabled {
+        cursor: not-allowed;
+      }
+    </style>
+  </div>
+
+  <div class="tab-content hidden" id="basics">
+    <%- include('./LandingsManageBasic.ejs') -%> 
+  </div>
+
+  <div class="tab-content hidden" id="editor">
+    <iframe id="previewIframe" style="width: 100%; border: 1px solid #ddd; overflow: hidden;"></iframe>
+  </div>
+
+  <div class="tab-content hidden" id="deploy">
+    <%- include('./LandingsManageMetadata.ejs') -%> 
+    <%- include('./LandingsManageDeploymentURLs.ejs') -%>
+  </div>
+</div>
+
+<script>
+  function adjustIframeHeight() {
+    const iframe = document.getElementById('previewIframe');
+    try {
+      const iframeDocument = iframe.contentDocument || iframe.contentWindow.document;
+      iframe.style.height = iframeDocument.body.scrollHeight||'1024' + 'px';
+    } catch (error) {
+      console.error('Error adjusting iframe height:', error);
+    }
+  }
+  
+  document.addEventListener('DOMContentLoaded', () => {
+    const tabs = ['basics', 'editor', 'preview', 'deploy'];
+    let currentTabIndex = 0;
+
+  
+
+    function showTab(tabName) {
+      document.querySelectorAll('.tab-content').forEach(content => {
+        content.classList.add('hidden');
+      });
+      document.querySelectorAll('.tab-button').forEach(button => {
+        button.classList.remove('font-semibold', 'text-blue-500');
+        button.classList.add('text-gray-700');
+      });
+
+      const tabContent = document.getElementById(tabName);
+      if (tabContent) {
+        tabContent.classList.remove('hidden');
+      } else {
+        console.error(`Tab content with id "${tabName}" not found.`);
+      }
+
+      const activeButton = document.querySelector(`[data-tab="${tabName}"]`);
+      if (activeButton) {
+        activeButton.classList.add('font-semibold', 'text-blue-500');
+        activeButton.classList.remove('text-gray-700');
+      }
+
+      if(tabName==='editor'){
+        window.editorWindow.show()
+      }else{
+        window.editorWindow.hide()
+      }
+    }
+
+    document.querySelectorAll('.tab-button').forEach(button => {
+      button.addEventListener('click', () => {
+        showTab(button.dataset.tab);
+        currentTabIndex = tabs.indexOf(button.dataset.tab);
+      });
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.ctrlKey) {
+        if (e.key === 'ArrowLeft') {
+          e.preventDefault();
+          currentTabIndex = (currentTabIndex - 1 + tabs.length) % tabs.length;
+          showTab(tabs[currentTabIndex]);
+        } else if (e.key === 'ArrowRight') {
+          e.preventDefault();
+          currentTabIndex = (currentTabIndex + 1) % tabs.length;
+          showTab(tabs[currentTabIndex]);
+        }
+      }
+    });
+
+    // Show the first tab by default
+    showTab(tabs[0]);
+
+    // Function to update the iframe content and adjust its height
+    window.updatePreview = function(html) {
+      console.log("updatePreview",html.length)
+      const previewIframe = document.getElementById('previewIframe');
+      const iframeDoc = previewIframe.contentDocument || previewIframe.contentWindow.document;
+      iframeDoc.open();
+      iframeDoc.write(html);
+      iframeDoc.close();
+      adjustIframeHeight(); // Adjust the height after updating content
+    };
+  });
+
+  setInterval(()=>{
+    adjustIframeHeight()
+  },1000)
+
+ 
+  
+</script>
+
+<style>
+  /* Optional: You can add additional styles here if needed */
+</style>
